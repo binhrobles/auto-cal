@@ -1,0 +1,57 @@
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+concurrency:
+  group: deploy-main
+  cancel-in-progress: false
+
+env:
+  AWS_REGION: us-east-1
+  STACK_NAME: auto-cal
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - run: npm ci
+
+      - run: npm run typecheck
+
+      - name: Test
+        run: node --test --experimental-strip-types 'src/**/*.test.ts'
+
+      - run: npm run build
+
+      - uses: aws-actions/setup-sam@v2
+        with:
+          use-installer: true
+
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: SAM deploy
+        run: |
+          sam deploy \
+            --stack-name "$STACK_NAME" \
+            --region "$AWS_REGION" \
+            --resolve-s3 \
+            --no-confirm-changeset \
+            --no-fail-on-empty-changeset \
+            --capabilities CAPABILITY_IAM

@@ -1,0 +1,133 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "CloudFormation",
+      "Effect": "Allow",
+      "Action": [
+        "cloudformation:CreateStack",
+        "cloudformation:UpdateStack",
+        "cloudformation:DeleteStack",
+        "cloudformation:DescribeStacks",
+        "cloudformation:DescribeStackEvents",
+        "cloudformation:DescribeStackResource",
+        "cloudformation:DescribeStackResources",
+        "cloudformation:GetTemplate",
+        "cloudformation:GetTemplateSummary",
+        "cloudformation:ListStackResources",
+        "cloudformation:CreateChangeSet",
+        "cloudformation:DescribeChangeSet",
+        "cloudformation:ExecuteChangeSet",
+        "cloudformation:DeleteChangeSet",
+        "cloudformation:ValidateTemplate"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "SamArtifactBucket",
+      "Effect": "Allow",
+      "Action": [
+        "s3:CreateBucket",
+        "s3:GetBucketLocation",
+        "s3:GetObject",
+        "s3:PutObject",
+        "s3:DeleteObject",
+        "s3:ListBucket",
+        "s3:GetBucketPolicy",
+        "s3:PutBucketPolicy",
+        "s3:PutBucketVersioning",
+        "s3:PutBucketTagging",
+        "s3:GetEncryptionConfiguration",
+        "s3:PutEncryptionConfiguration",
+        "s3:PutBucketPublicAccessBlock"
+      ],
+      "Resource": [
+        "arn:aws:s3:::aws-sam-cli-managed-default-samclisourcebucket-*",
+        "arn:aws:s3:::aws-sam-cli-managed-default-samclisourcebucket-*/*"
+      ]
+    },
+    {
+      "Sid": "LambdaFunction",
+      "Effect": "Allow",
+      "Action": [
+        "lambda:CreateFunction",
+        "lambda:UpdateFunctionCode",
+        "lambda:UpdateFunctionConfiguration",
+        "lambda:DeleteFunction",
+        "lambda:GetFunction",
+        "lambda:GetFunctionConfiguration",
+        "lambda:ListTags",
+        "lambda:TagResource",
+        "lambda:UntagResource",
+        "lambda:AddPermission",
+        "lambda:RemovePermission",
+        "lambda:PutFunctionEventInvokeConfig",
+        "lambda:UpdateFunctionEventInvokeConfig",
+        "lambda:DeleteFunctionEventInvokeConfig"
+      ],
+      "Resource": "arn:aws:lambda:*:*:function:auto-cal"
+    },
+    {
+      "Sid": "ExecutionRole",
+      "Effect": "Allow",
+      "Action": [
+        "iam:CreateRole",
+        "iam:DeleteRole",
+        "iam:GetRole",
+        "iam:PassRole",
+        "iam:AttachRolePolicy",
+        "iam:DetachRolePolicy",
+        "iam:PutRolePolicy",
+        "iam:DeleteRolePolicy",
+        "iam:GetRolePolicy",
+        "iam:TagRole",
+        "iam:UntagRole"
+      ],
+      "Resource": "arn:aws:iam::*:role/auto-cal-*"
+    },
+    {
+      "Sid": "CloudWatchLogs",
+      "Effect": "Allow",
+      "Action": [
+        "logs:CreateLogGroup",
+        "logs:DeleteLogGroup",
+        "logs:DescribeLogGroups",
+        "logs:PutRetentionPolicy",
+        "logs:DeleteRetentionPolicy",
+        "logs:TagResource",
+        "logs:UntagResource"
+      ],
+      "Resource": "arn:aws:logs:*:*:log-group:/aws/lambda/auto-cal*"
+    },
+    {
+      "Sid": "EventBridgeSchedule",
+      "Effect": "Allow",
+      "Action": [
+        "events:PutRule",
+        "events:DeleteRule",
+        "events:DescribeRule",
+        "events:PutTargets",
+        "events:RemoveTargets",
+        "events:ListTargetsByRule",
+        "events:ListRuleNamesByTarget",
+        "events:TagResource",
+        "events:UntagResource"
+      ],
+      "Resource": "arn:aws:events:*:*:rule/auto-cal-*"
+    },
+    {
+      "Sid": "DlqQueue",
+      "Effect": "Allow",
+      "Action": [
+        "sqs:CreateQueue",
+        "sqs:DeleteQueue",
+        "sqs:GetQueueAttributes",
+        "sqs:SetQueueAttributes",
+        "sqs:GetQueueUrl",
+        "sqs:TagQueue",
+        "sqs:UntagQueue"
+      ],
+      "Resource": "arn:aws:sqs:*:*:auto-cal-dlq"
+    }
+  ]
+}
