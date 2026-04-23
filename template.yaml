@@ -1,0 +1,80 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: auto-cal — poll Gmail label, parse events with Claude, write to Google Calendar.
+
+Parameters:
+  GoogleSecretName:
+    Type: String
+    Default: auto-cal/google
+    Description: Secrets Manager secret holding Google OAuth client_id/client_secret/refresh_token JSON.
+  AnthropicSecretName:
+    Type: String
+    Default: auto-cal/anthropic
+    Description: Secrets Manager secret holding { "api_key": "..." } JSON.
+  CalendarId:
+    Type: String
+    Default: primary
+    Description: Target Google Calendar ID. "primary" or a specific calendar ID.
+  MaxMessagesPerRun:
+    Type: Number
+    Default: 100
+
+Globals:
+  Function:
+    Runtime: nodejs22.x
+    Architectures: [arm64]
+    MemorySize: 512
+    Timeout: 120
+    LoggingConfig:
+      LogFormat: JSON
+
+Resources:
+  DeadLetterQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: auto-cal-dlq
+      MessageRetentionPeriod: 1209600
+
+  AutoCalFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: auto-cal
+      Handler: handler.handler
+      CodeUri: dist/
+      DeadLetterQueue:
+        Type: SQS
+        TargetArn: !GetAtt DeadLetterQueue.Arn
+      Environment:
+        Variables:
+          GOOGLE_SECRET_ID: !Ref GoogleSecretName
+          ANTHROPIC_SECRET_ID: !Ref AnthropicSecretName
+          CALENDAR_ID: !Ref CalendarId
+          MAX_MESSAGES_PER_RUN: !Ref MaxMessagesPerRun
+      Policies:
+        - Statement:
+            - Effect: Allow
+              Action: secretsmanager:GetSecretValue
+              Resource:
+                - !Sub arn:${AWS::Partition}:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:${GoogleSecretName}-*
+                - !Sub arn:${AWS::Partition}:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:${AnthropicSecretName}-*
+            - Effect: Allow
+              Action: sqs:SendMessage
+              Resource: !GetAtt DeadLetterQueue.Arn
+      Events:
+        Hourly:
+          Type: Schedule
+          Properties:
+            Schedule: rate(1 hour)
+            Description: auto-cal hourly poll
+
+  AutoCalFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/lambda/${AutoCalFunction}
+      RetentionInDays: 30
+
+Outputs:
+  FunctionName:
+    Value: !Ref AutoCalFunction
+  DlqUrl:
+    Value: !Ref DeadLetterQueue
