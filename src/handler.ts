@@ -38,5 +38,6 @@ export async function handler(): Promise<PipelineResult> {
     anthropic,
     learned,
     logger: logger.child({ component: 'pipeline' }),
+    concurrency: config.CONCURRENCY,
   });
 }

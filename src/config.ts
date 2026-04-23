@@ -5,6 +5,7 @@ const ConfigSchema = z.object({
   ANTHROPIC_SECRET_ID: z.string(),
   CALENDAR_ID: z.string(),
   MAX_MESSAGES_PER_RUN: z.coerce.number().int().positive().default(100),
+  CONCURRENCY: z.coerce.number().int().positive().default(5),
 });
 
 export type Config = z.infer<typeof ConfigSchema>;

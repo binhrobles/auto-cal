@@ -2,10 +2,12 @@ import { google, type gmail_v1 } from 'googleapis';
 import type { OAuth2Client } from 'google-auth-library';
 import type { Logger } from '../logger.ts';
 import { extractBody } from '../extract/text.ts';
+import { parallelMap } from '../concurrency.ts';
 import type { EventSource, PendingEmail } from './types.ts';
 
 const INBOX_LABEL = 'auto-cal/inbox';
 const PROCESSED_LABEL = 'auto-cal/processed';
+const FETCH_CONCURRENCY = 10;
 
 export interface GmailSourceOptions {
   auth: OAuth2Client;
@@ -51,17 +53,15 @@ export class GmailSource implements EventSource {
     const ids = (list.data.messages ?? []).map((m) => m.id!).filter(Boolean);
     this.logger.info('gmail list', { count: ids.length });
 
-    const results: PendingEmail[] = [];
-    for (const id of ids) {
+    const fetched = await parallelMap(ids, FETCH_CONCURRENCY, async (id) => {
       const full = await this.gmail.users.messages.get({
         userId: 'me',
         id,
         format: 'full',
       });
-      const parsed = parseMessage(full.data);
-      if (parsed) results.push(parsed);
-    }
-    return results;
+      return parseMessage(full.data);
+    });
+    return fetched.filter((e): e is PendingEmail => e !== null);
   }
 
   async ack(email: PendingEmail): Promise<void> {

@@ -18,13 +18,17 @@ Parameters:
   MaxMessagesPerRun:
     Type: Number
     Default: 100
+  Concurrency:
+    Type: Number
+    Default: 5
+    Description: Per-email processing concurrency. Claude tier-1 allows ~50 RPM for Haiku; 5 keeps us under that even if every email needs an LLM call.
 
 Globals:
   Function:
     Runtime: nodejs22.x
     Architectures: [arm64]
     MemorySize: 512
-    Timeout: 120
+    Timeout: 600
     LoggingConfig:
       LogFormat: JSON
 
@@ -50,6 +54,7 @@ Resources:
           ANTHROPIC_SECRET_ID: !Ref AnthropicSecretName
           CALENDAR_ID: !Ref CalendarId
           MAX_MESSAGES_PER_RUN: !Ref MaxMessagesPerRun
+          CONCURRENCY: !Ref Concurrency
       Policies:
         - Statement:
             - Effect: Allow
